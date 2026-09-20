@@ -1,7 +1,7 @@
 prefix = '/'
 
 # Reemplazamos por tu ID de World actual
-room = '6894bd39e3e4a405517cb530'
+room = '69a113aed41925285a28e3cd'
 token = '9adb3a9add8ff1734b659dcef898469a406fee6d9c1a796bd133c6b003519c0b'
 
 botID = '68654c84f77cce8a0c95eb1b'
