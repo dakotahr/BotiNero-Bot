@@ -1,8 +1,7 @@
 import threading
 from flask import Flask
-from highrise.toml_parser import BaseBot
+from highrise import BaseBot
 from src.handlers import CommandHandler, EventHandler
-from config.config import room, token
 
 # 1. Servidor web falso para que Render Gratuito no se apague
 app = Flask(__name__)
@@ -18,7 +17,7 @@ def run_flask():
 threading.Thread(target=run_flask, daemon=True).start()
 
 
-# 2. Código original de la plantilla de HseinHa
+# 2. Estructura del bot adaptada de la plantilla
 class Bot(BaseBot):
     def __init__(self):
         super().__init__()
@@ -38,10 +37,17 @@ class Bot(BaseBot):
         await self.event_handler.on_user_leave(user)
 
 
-# 3. Arranque del bot usando tus credenciales de config.py
+# 3. Arranque del bot leyendo automáticamente tu config.py
 if __name__ == "__main__":
-    from highrise.__main__ import *
     import asyncio
+    from highrise.__main__ import main
+    from config.config import room, token
     
-    # Esto ejecuta el bot de Highrise en paralelo con Render
+    # Configuramos las variables para que el SDK de Highrise las detecte
+    import os
+    os.environ["apiKey"] = token
+    os.environ["roomId"] = room
+    os.environ["botClass"] = "main:Bot"
+    
+    # Ejecuta el bot de Highrise
     asyncio.run(main())
