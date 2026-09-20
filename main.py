@@ -61,13 +61,12 @@ class Bot(BaseBot):
 # 3. ENTRADA Y CONEXIÓN AL JUEGO (CONFIG)
 # ==========================================
 if __name__ == "__main__":
-    from highrise.__main__ import main
+    from highrise.__main__ import Arcon
     from config.config import room, token
     
-    # Vinculamos tus credenciales guardadas en config.py
-    os.environ["apiKey"] = token
-    os.environ["roomId"] = room
-    os.environ["botClass"] = "main:Bot"
+    # Iniciamos el Bot utilizando el método de arranque oficial
+    bot_instance = Bot()
+    arcon = Arcon(bot_instance)
     
-    # Encendemos el bot
-    asyncio.run(main())
+    # Ejecuta el bot con tus credenciales asignadas
+    asyncio.run(arcon.run(room, token))
