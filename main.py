@@ -1,3 +1,17 @@
+import threading
+from flask import Flask
+
+app = Flask(__name__)
+
+@app.route('/')
+def home():
+    return "Bot Activo", 200
+
+def run_flask():
+    app.run(host='0.0.0.0', port=10000)
+
+# Arranca el servidor en segundo plano
+threading.Thread(target=run_flask, daemon=True).start()
 from highrise import BaseBot
 from highrise import __main__
 from highrise.models import AnchorPosition, CurrencyItem, Item, Position, Reaction, SessionMetadata, User
