@@ -25,9 +25,11 @@ threading.Thread(target=run_flask, daemon=True).start()
 # ==========================================
 class Bot(BaseBot):
     
-    # Se ejecuta cuando el bot entra a tu sala
-    async def on_start(self, session_metadata, room_permissions) -> None:
+    # CORRECCIÓN: 'room_permissions' ahora es opcional (=None) para evitar el error del SDK
+    async def on_start(self, session_metadata, room_permissions=None) -> None:
         print("¡BotiNera ingresó a la sala con éxito!")
+        # Forzamos un breve tiempo de espera para estabilizar la conexión antes de actuar
+        await asyncio.sleep(2)
         # Hace un baile automático al entrar al juego
         await self.highrise.send_emote("dance-tiktok8")
 
