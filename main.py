@@ -1,14 +1,18 @@
 import threading
+import os
+import asyncio
 from flask import Flask
 from highrise import BaseBot
-from src.handlers import CommandHandler, EventHandler
+from highrise.models import SessionMetadata, UserPosition, Position
 
-# 1. Servidor web falso para que Render Gratuito no se apague
+# ==========================================
+# 1. SERVIDOR FALSA PARA ENGAÑAR A RENDER (GRATIS)
+# ==========================================
 app = Flask(__name__)
 
 @app.route('/')
 def home():
-    return "Bot BotiNera Activo", 200
+    return "¡BotiNera está en línea y funcionando perfectamente!", 200
 
 def run_flask():
     app.run(host='0.0.0.0', port=10000)
@@ -17,37 +21,54 @@ def run_flask():
 threading.Thread(target=run_flask, daemon=True).start()
 
 
-# 2. Estructura del bot adaptada de la plantilla
+# ==========================================
+# 2. PROGRAMACIÓN DIRECTA DEL BOT (FUNCIONES)
+# ==========================================
 class Bot(BaseBot):
-    def __init__(self):
-        super().__init__()
-        self.command_handler = CommandHandler(self)
-        self.event_handler = EventHandler(self)
+    
+    # Se ejecuta cuando el bot entra con éxito a tu sala
+    async def on_start(self, session_metadata: SessionMetadata, room_permissions: dict) -> None:
+        print("¡BotiNera ingresó con éxito a la sala!")
+        # Hace un baile automático al entrar
+        await self.highrise.send_emote("dance-tiktok8")
 
-    async def on_start(self, session_metadata, room_permissions):
-        await self.event_handler.on_start(session_metadata, room_permissions)
+    # Se ejecuta cada vez que un usuario escribe en el chat público
+    async def on_chat(self, user: str, message: str) -> None:
+        print(f"{user.username}: {message}")
+        
+        # COMANDO 1: Responder con saludo si alguien escribe !hola
+        if message.lower() == "!hola":
+            await self.highrise.chat(f"¡Hola @{user.username}! Bienvenido/a a nuestra sala. ✨")
+            
+        # COMANDO 2: Comando para que el bot baile en la sala
+        elif message.lower() == "!bailar":
+            await self.highrise.chat("¡A mover el cuerpo! 💃")
+            await self.highrise.send_emote("dance-tiktok8")
+            
+        # COMANDO 3: Comando para que el bot aplauda
+        elif message.lower() == "!aplaudir":
+            await self.highrise.send_emote("emote-applause")
 
-    async def on_chat(self, user, message):
-        await self.command_handler.on_chat(user, message)
+    # Se ejecuta automáticamente cuando alguien entra a la sala
+    async def on_user_join(self, user: str, position: UserPosition) -> None:
+        # Le envía un susurro privado automático dándole la bienvenida
+        try:
+            await self.highrise.send_whisper(user.id, f"¡Hola {user.username}! Bienvenido a la sala de IamDakota. Pasala genial. ❤️")
+        except:
+            pass
 
-    async def on_user_join(self, user, position):
-        await self.event_handler.on_user_join(user, position)
 
-    async def on_user_leave(self, user):
-        await self.event_handler.on_user_leave(user)
-
-
-# 3. Arranque del bot leyendo automáticamente tu config.py
+# ==========================================
+# 3. CONEXIÓN AUTOMÁTICA USANDO TU CONFIG.PY
+# ==========================================
 if __name__ == "__main__":
-    import asyncio
     from highrise.__main__ import main
     from config.config import room, token
     
-    # Configuramos las variables para que el SDK de Highrise las detecte
-    import os
+    # Vinculamos tus accesos directamente con el sistema del juego
     os.environ["apiKey"] = token
     os.environ["roomId"] = room
     os.environ["botClass"] = "main:Bot"
     
-    # Ejecuta el bot de Highrise
+    # Encendemos el bot
     asyncio.run(main())
