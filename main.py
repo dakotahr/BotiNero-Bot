@@ -121,6 +121,25 @@ class Bot(BaseBot):
             except:
                 await self.highrise.send_whisper(user.id, "No se pudo ejecutar ese emote. Asegúrate de escribir bien el ID técnico.")
 
+        # --- COMANDO NUEVO: HACER BAILAR AL USUARIO QUE CORRE EL COMANDO ---
+        elif msg.startswith("!me "):
+            emote_solicitado = message.replace("!me ", "").strip()
+            try:
+                await self.highrise.send_emote(emote_solicitado, user.id)
+            except Exception as e:
+                print(f"Error en comando !me: {e}")
+
+        # --- COMANDO NUEVO: HACER BAILAR A TODOS EN LA SALA (Solo Dueño) ---
+        elif msg.startswith("!todos ") and user.username.lower() == "iamdakota":
+            emote_solicitado = message.replace("!todos ", "").strip()
+            try:
+                await self.highrise.chat(f"🥳 ¡Coreografía masiva! Todos hacemos: {emote_solicitado} 🥳")
+                lista_usuarios = await self.highrise.get_room_users()
+                for u, pos in lista_usuarios.content:
+                    await self.highrise.send_emote(emote_solicitado, u.id)
+            except Exception as e:
+                print(f"Error en comando !todos: {e}")
+
         # --- SISTEMA DE SEGUIMIENTO ---
         elif msg == "!seguir":
             self.usuario_a_forzar = None
