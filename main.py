@@ -55,10 +55,6 @@ class Bot(BaseBot):
         self.bot_pos_x = 0
         self.bot_pos_y = 0
         self.bot_pos_z = 0
-        
-        # Variables de control para el loop de baile
-        self.loop_activo = False
-        self.emote_actual_loop = ""
 
     # Tarea repetitiva para anuncios y seguimiento automático
     async def bucle_segundo_plano(self):
@@ -69,10 +65,12 @@ class Bot(BaseBot):
             # 1. Sistema de seguimiento inteligente
             if self.usuario_a_seguir:
                 try:
+                    # Buscamos la posición del usuario objetivo en la sala
                     room_users = await self.highrise.get_room_users()
                     for user, pos in room_users.content:
                         if user.id == self.usuario_a_seguir or user.username.lower() == str(self.usuario_a_seguir).lower():
                             if isinstance(pos, Position):
+                                # Hacemos que el bot camine hacia el usuario objetivo
                                 await self.highrise.walk_to(Position(pos.x, pos.y, pos.z - 0.5))
                 except Exception as e:
                     print(f"Error al seguir: {e}")
@@ -88,6 +86,7 @@ class Bot(BaseBot):
         print("¡BotiNera ingresó a la sala con éxito!")
         await asyncio.sleep(2)
         await self.highrise.send_emote("dance-tiktok8")
+        # Iniciamos el bucle inteligente en segundo plano
         asyncio.create_task(self.bucle_segundo_plano())
 
     async def on_chat(self, user, message: str) -> None:
@@ -122,30 +121,7 @@ class Bot(BaseBot):
             except:
                 await self.highrise.send_whisper(user.id, "No se pudo ejecutar ese emote. Asegúrate de escribir bien el ID técnico.")
 
-        # --- COMANDO NUEVO: LOOP DE BAILE SEGURO ---
-        elif msg.startswith("!loop "):
-            self.emote_actual_loop = message.replace("!loop ", "").strip()
-            self.loop_activo = True
-            await self.highrise.chat(f"🔄 Iniciando loop infinito de: {self.emote_actual_loop}")
-            try:
-                await self.highrise.send_emote(self.emote_actual_loop)
-                # Crea una tarea separada que repite el baile cada 5 segundos de forma segura
-                async def repetir_baile():
-                    while self.loop_activo:
-                        await asyncio.sleep(5)
-                        if self.loop_activo:
-                            await self.highrise.send_emote(self.emote_actual_loop)
-                asyncio.create_task(repetir_baile())
-            except:
-                pass
-
-        # --- COMANDO NUEVO: DETENER LOOP ---
-        elif msg == "!stop loop":
-            self.loop_activo = False
-            self.emote_actual_loop = ""
-            await self.highrise.chat("🛑 Bucle de emote desactivado.")
-
-        # --- HACER BAILAR AL USUARIO QUE CORRE EL COMANDO ---
+        # --- COMANDO NUEVO: HACER BAILAR AL USUARIO QUE CORRE EL COMANDO ---
         elif msg.startswith("!me "):
             emote_solicitado = message.replace("!me ", "").strip()
             try:
@@ -153,7 +129,7 @@ class Bot(BaseBot):
             except Exception as e:
                 print(f"Error en comando !me: {e}")
 
-        # --- HACER BAILAR A TODOS EN LA SALA (Solo Dueño) ---
+        # --- COMANDO NUEVO: HACER BAILAR A TODOS EN LA SALA (Solo Dueño) ---
         elif msg.startswith("!todos ") and user.username.lower() == "iamdakota":
             emote_solicitado = message.replace("!todos ", "").strip()
             try:
@@ -220,3 +196,17 @@ class Bot(BaseBot):
         # Sumamos 1 al contador de visitas general de la sala
         self.contador_visitas += 1
         try:
+            await self.highrise.send_whisper(user.id, f"¡Hola {user.username}! Bienvenido a la sala. Pasala genial. ❤️")
+        except:
+            pass
+
+
+# ==========================================
+# 4. ENTRADA Y CONEXIÓN AL JUEGO (CONFIG)
+# ==========================================
+if __name__ == "__main__":
+    from highrise.__main__ import main, BotDefinition
+    from config.config import room, token
+    
+    definitions = [BotDefinition(Bot(), room, token)]
+    asyncio.run(main(definitions))
