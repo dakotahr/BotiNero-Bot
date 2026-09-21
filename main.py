@@ -13,7 +13,7 @@ app = Flask(__name__)
 
 @app.route('/')
 def home():
-    return "¡BotiNera Avanzada está activa!", 200
+    return "¡BotiNero Avanzada está activa!", 200
 
 def run_flask():
     app.run(host='0.0.0.0', port=10000)
@@ -178,7 +178,7 @@ class Bot(BaseBot):
                 # Obtenemos la lista de todas las personas en la sala
                 room_users = await self.highrise.get_room_users()
                 for u, pos in room_users.content:
-                    if u.id != "68654c84f77cce8a0c95eb1b": # No auto-teletransportar al bot
+                    if u.id != "686523fd88522a5a95892544": # No auto-teletransportar al bot
                         # Los mueve al lugar donde el bot está parado actualmente
                         await self.highrise.teleport(u.id, Position(self.bot_pos_x, self.bot_pos_y, self.bot_pos_z))
             except Exception as e:
@@ -186,7 +186,7 @@ class Bot(BaseBot):
 
     # Registra la posición del bot continuamente para saber a dónde traer a todos
     async def on_user_move(self, user, pos) -> None:
-        if user.id == "68654c84f77cce8a0c95eb1b": # Si es el bot el que se mueve
+        if user.id == "686523fd88522a5a95892544": # Si es el bot el que se mueve
             if isinstance(pos, Position):
                 self.bot_pos_x = pos.x
                 self.bot_pos_y = pos.y
