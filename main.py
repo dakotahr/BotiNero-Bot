@@ -47,6 +47,7 @@ TRIVIAS = [
 class Bot(BaseBot):
     def __init__(self):
         super().__init__()
+        # Variables de estado del bot
         self.contador_visitas = 0
         self.usuario_a_seguir = None
         self.trivia_activa = False
@@ -55,7 +56,7 @@ class Bot(BaseBot):
         self.bot_pos_y = 0
         self.bot_pos_z = 0
         
-        # Diccionarios para controlar quiénes están bailando en loop
+        # Diccionario para almacenar loops de baile activos
         self.loops_activos = {} 
 
     # Tarea repetitiva para anuncios, seguimiento y loops de baile continuos
@@ -86,7 +87,7 @@ class Bot(BaseBot):
                 except Exception as e:
                     print(f"Error al seguir: {e}")
 
-            # 3. Sistema de anuncios automáticos (Cada 5 minutos)
+            # 3. Sistema de anuncios automáticos (Cada 5 minutos = 300 segundos)
             contador_anuncio += 5
             if contador_anuncio >= 300:
                 contador_anuncio = 0
@@ -112,7 +113,6 @@ class Bot(BaseBot):
 
         # --- COMANDO GENERAL PARA DETENER CUALQUIER LOOP ---
         if msg == "!stop":
-            # Revisa si el bot o el usuario tienen un loop activo y lo remueve
             if "bot" in self.loops_activos:
                 self.loops_activos.pop("bot", None)
             if user.id in self.loops_activos:
@@ -127,7 +127,7 @@ class Bot(BaseBot):
         elif msg.startswith("!bailar"):
             if "loop" in msg:
                 self.loops_activos["bot"] = "dance-tiktok8"
-                await self.highrise.chat("🔄 Bot bailando en loop de forma infinita.")
+                await self.highrise.chat("🔄 Bot dancing in loop mode.")
             else:
                 await self.highrise.chat("¡A bailar todo el mundo! 💃")
                 await self.highrise.send_emote("dance-tiktok8")
@@ -141,29 +141,31 @@ class Bot(BaseBot):
 
         # --- DETECTAR EMOTE INTELIGENTE DEL BOT (CON OPCIÓN LOOP) ---
         elif msg.startswith("!emote "):
-            partes = message.replace("!emote ", "").strip().split()
-            emote_solicitado = partes[0]
+            texto_limpio = message.replace("!emote ", "").strip()
+            partes = texto_limpio.split()
             
             if len(partes) > 1 and partes[1].lower() == "loop":
+                emote_solicitado = partes[0]
                 self.loops_activos["bot"] = emote_solicitado
                 await self.highrise.chat(f"🔄 Modo loop activado para mí con el emote: {emote_solicitado}")
             else:
                 try:
-                    await self.highrise.send_emote(emote_solicitado)
+                    await self.highrise.send_emote(texto_limpio)
                 except:
                     await self.highrise.send_whisper(user.id, "ID técnico incorrecto.")
 
         # --- DETECTAR EMOTE INTELIGENTE DE USUARIO (CON OPCIÓN LOOP) ---
         elif msg.startswith("!me "):
-            partes = message.replace("!me ", "").strip().split()
-            emote_solicitado = partes[0]
+            texto_limpio = message.replace("!me ", "").strip()
+            partes = texto_limpio.split()
             
             if len(partes) > 1 and partes[1].lower() == "loop":
+                emote_solicitado = partes[0]
                 self.loops_activos[user.id] = emote_solicitado
                 await self.highrise.chat(f"🔄 ¡Bucle activado! @{user.username} bailará {emote_solicitado} infinitamente. Escribe !stop para frenar.")
             else:
                 try:
-                    await self.highrise.send_emote(emote_solicitado, user.id)
+                    await self.highrise.send_emote(texto_limpio, user.id)
                 except:
                     pass
 
@@ -180,7 +182,6 @@ class Bot(BaseBot):
 
         # --- SISTEMA DE SEGUIMIENTO ---
         elif msg == "!seguir":
-            self.usuario_a_forzar = None
             self.usuario_a_seguir = user.id
             await self.highrise.chat(f"🏃‍♂️ Siguiendo a @{user.username}...")
         
