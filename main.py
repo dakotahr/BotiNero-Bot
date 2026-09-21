@@ -47,7 +47,6 @@ TRIVIAS = [
 class Bot(BaseBot):
     def __init__(self):
         super().__init__()
-        # Variables de estado del bot
         self.contador_visitas = 0
         self.usuario_a_seguir = None
         self.trivia_activa = False
@@ -55,15 +54,12 @@ class Bot(BaseBot):
         self.bot_pos_x = 0
         self.bot_pos_y = 0
         self.bot_pos_z = 0
-        
-        # Diccionario para almacenar loops de baile activos
         self.loops_activos = {} 
 
-    # Tarea repetitiva para anuncios, seguimiento y loops de baile continuos
     async def bucle_segundo_plano(self):
         contador_anuncio = 0
         while True:
-            await asyncio.sleep(5) # Se ejecuta cada 5 segundos
+            await asyncio.sleep(5)
             
             # 1. Procesador inteligente de Loops de baile
             if self.loops_activos:
@@ -87,7 +83,7 @@ class Bot(BaseBot):
                 except Exception as e:
                     print(f"Error al seguir: {e}")
 
-            # 3. Sistema de anuncios automáticos (Cada 5 minutos = 300 segundos)
+            # 3. Sistema de anuncios automáticos (Cada 5 minutos)
             contador_anuncio += 5
             if contador_anuncio >= 300:
                 contador_anuncio = 0
@@ -117,7 +113,7 @@ class Bot(BaseBot):
                 self.loops_activos.pop("bot", None)
             if user.id in self.loops_activos:
                 self.loops_activos.pop(user.id, None)
-            await self.highrise.chat(f"🛑 Loops de baile desactivados para @{user.username} y el Bot.")
+            await self.highrise.chat(f"🛑 Loops de bucle desactivados para @{user.username} y el Bot.")
             return
 
         # --- COMANDOS BÁSICOS ---
@@ -127,7 +123,7 @@ class Bot(BaseBot):
         elif msg.startswith("!bailar"):
             if "loop" in msg:
                 self.loops_activos["bot"] = "dance-tiktok8"
-                await self.highrise.chat("🔄 Bot dancing in loop mode.")
+                await self.highrise.chat("🔄 Bot bailando en bucle continuo.")
             else:
                 await self.highrise.chat("¡A bailar todo el mundo! 💃")
                 await self.highrise.send_emote("dance-tiktok8")
@@ -142,27 +138,23 @@ class Bot(BaseBot):
         # --- DETECTAR EMOTE INTELIGENTE DEL BOT (CON OPCIÓN LOOP) ---
         elif msg.startswith("!emote "):
             texto_limpio = message.replace("!emote ", "").strip()
-            partes = texto_limpio.split()
-            
-            if len(partes) > 1 and partes[1].lower() == "loop":
-                emote_solicitado = partes[0]
+            if texto_limpio.endswith(" loop"):
+                emote_solicitado = texto_limpio.replace(" loop", "").strip()
                 self.loops_activos["bot"] = emote_solicitado
-                await self.highrise.chat(f"🔄 Modo loop activado para mí con el emote: {emote_solicitado}")
+                await self.highrise.chat(f"🔄 Modo loop activo para el Bot con: {emote_solicitado}")
             else:
                 try:
                     await self.highrise.send_emote(texto_limpio)
                 except:
-                    await self.highrise.send_whisper(user.id, "ID técnico incorrecto.")
+                    await self.highrise.send_whisper(user.id, "ID de emote incorrecto.")
 
         # --- DETECTAR EMOTE INTELIGENTE DE USUARIO (CON OPCIÓN LOOP) ---
         elif msg.startswith("!me "):
             texto_limpio = message.replace("!me ", "").strip()
-            partes = texto_limpio.split()
-            
-            if len(partes) > 1 and partes[1].lower() == "loop":
-                emote_solicitado = partes[0]
+            if texto_limpio.endswith(" loop"):
+                emote_solicitado = texto_limpio.replace(" loop", "").strip()
                 self.loops_activos[user.id] = emote_solicitado
-                await self.highrise.chat(f"🔄 ¡Bucle activado! @{user.username} bailará {emote_solicitado} infinitamente. Escribe !stop para frenar.")
+                await self.highrise.chat(f"🔄 ¡Bucle activo! @{user.username} bailará {emote_solicitado} sin parar. Escribe !stop para frenar.")
             else:
                 try:
                     await self.highrise.send_emote(texto_limpio, user.id)
@@ -222,3 +214,12 @@ class Bot(BaseBot):
 
     # Registra la posición del bot continuamente
     async def on_user_move(self, user, pos) -> None:
+        if user.id == "68654c84f77cce8a0c95eb1b":
+            if isinstance(pos, Position):
+                self.bot_pos_x = pos.x
+                self.bot_pos_y = pos.y
+                self.bot_pos_z = pos.z
+
+    async def on_user_join(self, user, position) -> None:
+        self.contador_visitas += 1
+        try:
