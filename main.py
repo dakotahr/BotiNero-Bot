@@ -13,7 +13,7 @@ app = Flask(__name__)
 
 @app.route('/')
 def home():
-    return "¡BotiNera Avanzada y Estable está activa!", 200
+    return "¡BotiNera Avanzada está activa!", 200
 
 def run_flask():
     app.run(host='0.0.0.0', port=10000)
@@ -47,6 +47,7 @@ TRIVIAS = [
 class Bot(BaseBot):
     def __init__(self):
         super().__init__()
+        # Variables de estado del bot
         self.contador_visitas = 0
         self.usuario_a_seguir = None
         self.trivia_activa = False
@@ -54,37 +55,27 @@ class Bot(BaseBot):
         self.bot_pos_x = 0
         self.bot_pos_y = 0
         self.bot_pos_z = 0
-        self.loops_activos = {} 
 
-    # Tarea repetitiva para anuncios, seguimiento y loops de baile continuos
+    # Tarea repetitiva para anuncios y seguimiento automático
     async def bucle_segundo_plano(self):
         contador_anuncio = 0
         while True:
-            await asyncio.sleep(5)
+            await asyncio.sleep(5) # Se ejecuta cada 5 segundos
             
-            # 1. Procesador inteligente de Loops de baile
-            if self.loops_activos:
-                for target_id, emote_name in list(self.loops_activos.items()):
-                    try:
-                        if target_id == "bot":
-                            await self.highrise.send_emote(emote_name)
-                        else:
-                            await self.highrise.send_emote(emote_name, target_id)
-                    except:
-                        pass
-
-            # 2. Sistema de seguimiento inteligente
+            # 1. Sistema de seguimiento inteligente
             if self.usuario_a_seguir:
                 try:
+                    # Buscamos la posición del usuario objetivo en la sala
                     room_users = await self.highrise.get_room_users()
                     for user, pos in room_users.content:
                         if user.id == self.usuario_a_seguir or user.username.lower() == str(self.usuario_a_seguir).lower():
                             if isinstance(pos, Position):
+                                # Hacemos que el bot camine hacia el usuario objetivo
                                 await self.highrise.walk_to(Position(pos.x, pos.y, pos.z - 0.5))
                 except Exception as e:
                     print(f"Error al seguir: {e}")
 
-            # 3. Sistema de anuncios automáticos (Cada 5 minutos)
+            # 2. Sistema de anuncios automáticos (Cada 5 minutos = 300 segundos)
             contador_anuncio += 5
             if contador_anuncio >= 300:
                 contador_anuncio = 0
@@ -95,6 +86,7 @@ class Bot(BaseBot):
         print("¡BotiNera ingresó a la sala con éxito!")
         await asyncio.sleep(2)
         await self.highrise.send_emote("dance-tiktok8")
+        # Iniciamos el bucle inteligente en segundo plano
         asyncio.create_task(self.bucle_segundo_plano())
 
     async def on_chat(self, user, message: str) -> None:
@@ -108,27 +100,12 @@ class Bot(BaseBot):
                 await self.highrise.chat(f"🎉 ¡Felicidades @{user.username}! Respondiste correctamente y ganaste la trivia. 🎉")
             return
 
-        # --- COMANDO GENERAL PARA DETENER CUALQUIER LOOP ---
-        if msg == "!stop":
-            if "bot" in self.loops_activos:
-                self.loops_activos.pop("bot", None)
-            if user.id in self.loops_activos:
-                self.loops_activos.pop(user.id, None)
-            await self.highrise.chat(f"🛑 Loops de bucle desactivados para @{user.username} y el Bot.")
-            return
-
-        # --- COMANDOS BÁSICOS ---
+        # --- COMANDOS BÁSICOS ANTERIORES (CONSERVADOS) ---
         if msg == "!hola":
             await self.highrise.chat(f"¡Hola @{user.username}! Bienvenido/a a la sala. ✨")
-        
-        elif msg.startswith("!bailar"):
-            if "loop" in msg:
-                self.loops_activos["bot"] = "dance-tiktok8"
-                await self.highrise.chat("🔄 Bot bailando en bucle continuo.")
-            else:
-                await self.highrise.chat("¡A bailar todo el mundo! 💃")
-                await self.highrise.send_emote("dance-tiktok8")
-                
+        elif msg == "!bailar":
+            await self.highrise.chat("¡A bailar todo el mundo! 💃")
+            await self.highrise.send_emote("dance-tiktok8")
         elif msg == "!aplaudir":
             await self.highrise.send_emote("emote-applause")
 
@@ -136,33 +113,23 @@ class Bot(BaseBot):
         elif msg == "!visitas":
             await self.highrise.chat(f"📊 Esta sala ha recibido {self.contador_visitas} visitas desde que estoy online.")
 
-        # --- DETECTAR EMOTE INTELIGENTE DEL BOT (CON OPCIÓN LOOP) ---
+        # --- DETECTAR CUALQUIER EMOTE INTELIGENTE ---
         elif msg.startswith("!emote "):
-            texto_limpio = message.replace("!emote ", "").strip()
-            if texto_limpio.endswith(" loop"):
-                emote_solicitado = texto_limpio.replace(" loop", "").strip()
-                self.loops_activos["bot"] = emote_solicitado
-                await self.highrise.chat(f"🔄 Modo loop activo para el Bot con: {emote_solicitado}")
-            else:
-                try:
-                    await self.highrise.send_emote(texto_limpio)
-                except:
-                    await self.highrise.send_whisper(user.id, "ID de emote incorrecto.")
+            emote_solicitado = message.replace("!emote ", "").strip()
+            try:
+                await self.highrise.send_emote(emote_solicitado)
+            except:
+                await self.highrise.send_whisper(user.id, "No se pudo ejecutar ese emote. Asegúrate de escribir bien el ID técnico.")
 
-        # --- DETECTAR EMOTE INTELIGENTE DE USUARIO (CON OPCIÓN LOOP) ---
+        # --- COMANDO NUEVO: HACER BAILAR AL USUARIO QUE CORRE EL COMANDO ---
         elif msg.startswith("!me "):
-            texto_limpio = message.replace("!me ", "").strip()
-            if texto_limpio.endswith(" loop"):
-                emote_solicitado = texto_limpio.replace(" loop", "").strip()
-                self.loops_activos[user.id] = emote_solicitado
-                await self.highrise.chat(f"🔄 ¡Bucle activo! @{user.username} bailará {emote_solicitado} sin parar. Escribe !stop para frenar.")
-            else:
-                try:
-                    await self.highrise.send_emote(texto_limpio, user.id)
-                except:
-                    pass
+            emote_solicitado = message.replace("!me ", "").strip()
+            try:
+                await self.highrise.send_emote(emote_solicitado, user.id)
+            except Exception as e:
+                print(f"Error en comando !me: {e}")
 
-        # --- HACER BAILAR A TODOS EN LA SALA (Solo Dueño) ---
+        # --- COMANDO NUEVO: HACER BAILAR A TODOS EN LA SALA (Solo Dueño) ---
         elif msg.startswith("!todos ") and user.username.lower() == "iamdakota":
             emote_solicitado = message.replace("!todos ", "").strip()
             try:
@@ -175,6 +142,7 @@ class Bot(BaseBot):
 
         # --- SISTEMA DE SEGUIMIENTO ---
         elif msg == "!seguir":
+            self.usuario_a_forzar = None
             self.usuario_a_seguir = user.id
             await self.highrise.chat(f"🏃‍♂️ Siguiendo a @{user.username}...")
         
@@ -197,27 +165,48 @@ class Bot(BaseBot):
             self.trivia_activa = True
             await self.highrise.chat(f"🧠 ¡TRIVIA TIME! 🧠\nPregunta: {preg['p']}\nOpciones: {preg['o']}\n👉 ¡Responde escribiendo solo la letra de la opción correcta!")
             
+            # Tiempo límite de 30 segundos para responder
             await asyncio.sleep(30)
             if self.trivia_activa:
                 self.trivia_activa = False
                 await self.highrise.chat(f"⏱️ Tiempo agotado. Nadie respondió a tiempo. La respuesta correcta era la ({self.respuesta_trivia.upper()}).")
 
-        # --- COMANDO DE TELETRANSPORTE MASIVO (Solo Dueño - Versión Limpia y Segura) ---
+        # --- COMANDO DE TELETRANSPORTE MASIVO (Solo Dueño) ---
         elif msg == "!traer todos" and user.username.lower() == "iamdakota":
-            await self.highrise.chat("🔮 ¡Teletransportando a todos a mi posición actual! 🔮")
-            lista_usuarios = await self.highrise.get_room_users()
-            for u, pos in lista_usuarios.content:
-                if u.id != "68654c84f77cce8a0c95eb1b":
-                    await self.highrise.teleport(u.id, Position(self.bot_pos_x, self.bot_pos_y, self.bot_pos_z))
+            try:
+                await self.highrise.chat("🔮 ¡Teletransportando a todos a mi posición actual! 🔮")
+                # Obtenemos la lista de todas las personas en la sala
+                room_users = await self.highrise.get_room_users()
+                for u, pos in room_users.content:
+                    if u.id != "68654c84f77cce8a0c95eb1b": # No auto-teletransportar al bot
+                        # Los mueve al lugar donde el bot está parado actualmente
+                        await self.highrise.teleport(u.id, Position(self.bot_pos_x, self.bot_pos_y, self.bot_pos_z))
+            except Exception as e:
+                print(f"Error en teletransporte masivo: {e}")
 
-    # Registra la posición del bot continuamente
+    # Registra la posición del bot continuamente para saber a dónde traer a todos
     async def on_user_move(self, user, pos) -> None:
-        if user.id == "68654c84f77cce8a0c95eb1b":
+        if user.id == "68654c84f77cce8a0c95eb1b": # Si es el bot el que se mueve
             if isinstance(pos, Position):
                 self.bot_pos_x = pos.x
                 self.bot_pos_y = pos.y
                 self.bot_pos_z = pos.z
 
     async def on_user_join(self, user, position) -> None:
+        # Sumamos 1 al contador de visitas general de la sala
         self.contador_visitas += 1
         try:
+            await self.highrise.send_whisper(user.id, f"¡Hola {user.username}! Bienvenido a la sala. Pasala genial. ❤️")
+        except:
+            pass
+
+
+# ==========================================
+# 4. ENTRADA Y CONEXIÓN AL JUEGO (CONFIG)
+# ==========================================
+if __name__ == "__main__":
+    from highrise.__main__ import main, BotDefinition
+    from config.config import room, token
+    
+    definitions = [BotDefinition(Bot(), room, token)]
+    asyncio.run(main(definitions))
