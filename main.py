@@ -4,9 +4,10 @@ from highrise import BaseBot
 from highrise.models import Position
 import config
 
-USER_DUENO = config.ownerName
-ID_BOT_SALA = config.botID
-NOMBRE_DEL_BOT = config.botName
+# Corregido: Ahora lee exactamente las variables en español de tu config.py
+USER_DUENO = config.ownerName if hasattr(config, 'ownerName') else config.dueño
+ID_BOT_SALA = config.botID if hasattr(config, 'botID') else config.botid
+NOMBRE_DEL_BOT = config.botName if hasattr(config, 'botName') else config.botname
 PREFIX = config.prefix
 
 # ==========================================
@@ -47,9 +48,11 @@ class Bot(BaseBot):
         self.usuario_a_seguir = None
         self.trivia_activa = False
         self.respuesta_trivia = ""
-        self.bot_pos_x = config.coordinates['x']
-        self.bot_pos_y = config.coordinates['y']
-        self.bot_pos_z = config.coordinates['z']
+        # Sistema de seguridad si no existen las coordenadas
+        coor = getattr(config, 'coordinates', {'x': 0.0, 'y': 0.0, 'z': 0.0})
+        self.bot_pos_x = coor.get('x', 0.0)
+        self.bot_pos_y = coor.get('y', 0.0)
+        self.bot_pos_z = coor.get('z', 0.0)
 
     async def bucle_segundo_plano(self):
         contador_anuncio = 0
