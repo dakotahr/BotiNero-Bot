@@ -56,6 +56,7 @@ class Bot(BaseBot):
         self.bot_pos_z = 0
         self.loops_activos = {} 
 
+    # Tarea repetitiva para anuncios, seguimiento y loops de baile continuos
     async def bucle_segundo_plano(self):
         contador_anuncio = 0
         while True:
@@ -201,16 +202,13 @@ class Bot(BaseBot):
                 self.trivia_activa = False
                 await self.highrise.chat(f"⏱️ Tiempo agotado. Nadie respondió a tiempo. La respuesta correcta era la ({self.respuesta_trivia.upper()}).")
 
-        # --- COMANDO DE TELETRANSPORTE MASIVO (Solo Dueño) ---
+        # --- COMANDO DE TELETRANSPORTE MASIVO (Solo Dueño - Versión Limpia y Segura) ---
         elif msg == "!traer todos" and user.username.lower() == "iamdakota":
-            try:
-                await self.highrise.chat("🔮 ¡Teletransportando a todos a mi posición actual! 🔮")
-                room_users = await self.highrise.get_room_users()
-                for u, pos in room_users.content:
-                    if u.id != "68654c84f77cce8a0c95eb1b":
-                        await self.highrise.teleport(u.id, Position(self.bot_pos_x, self.bot_pos_y, self.bot_pos_z))
-            except Exception as e:
-                print(f"Error en teletransporte masivo: {e}")
+            await self.highrise.chat("🔮 ¡Teletransportando a todos a mi posición actual! 🔮")
+            lista_usuarios = await self.highrise.get_room_users()
+            for u, pos in lista_usuarios.content:
+                if u.id != "68654c84f77cce8a0c95eb1b":
+                    await self.highrise.teleport(u.id, Position(self.bot_pos_x, self.bot_pos_y, self.bot_pos_z))
 
     # Registra la posición del bot continuamente
     async def on_user_move(self, user, pos) -> None:
