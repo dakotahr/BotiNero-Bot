@@ -55,6 +55,10 @@ class Bot(BaseBot):
         self.bot_pos_x = 0
         self.bot_pos_y = 0
         self.bot_pos_z = 0
+        
+        # Nuevas variables integradas de forma segura para los bucles
+        self.loop_activo = False
+        self.emote_actual_loop = ""
 
     # Tarea repetitiva para anuncios y seguimiento automático
     async def bucle_segundo_plano(self):
@@ -121,6 +125,42 @@ class Bot(BaseBot):
             except:
                 await self.highrise.send_whisper(user.id, "No se pudo ejecutar ese emote. Asegúrate de escribir bien el ID técnico.")
 
+        # --- COMANDO NUEVO: LOOP INFINITO DE BAILE SEGURO ---
+        elif msg.startswith("!loop "):
+            self.emote_actual_loop = message.replace("!loop ", "").strip()
+            self.loop_activo = True
+            await self.highrise.chat(f"🔄 Modo bucle activado: {self.emote_actual_loop}")
+            
+            # Tarea que repite el baile cada 5 segundos de forma aislada
+            async def iniciar_repeticion():
+                while self.loop_activo:
+                    try:
+                        await self.highrise.send_emote(self.emote_actual_loop)
+                    except:
+                        pass
+                    await asyncio.sleep(5)
+            asyncio.create_task(iniciar_repeticion())
+
+        # --- COMANDO NUEVO: DETENER LOOP ---
+        elif msg == "!stop loop":
+            self.loop_activo = False
+            self.emote_actual_loop = ""
+            await self.highrise.chat("🛑 Bucle de emote desactivado.")
+
+        # --- COMANDO NUEVO: KICK / EXPULSAR (Solo Dueño) ---
+        elif msg.startswith("!kick ") and user.username.lower() == "iamdakota":
+            objetivo = message.replace("!kick ", "").replace("@", "").strip().lower()
+            try:
+                lista_usuarios = await self.highrise.get_room_users()
+                for u, pos in lista_usuarios.content:
+                    if u.username.lower() == objetivo:
+                        # Método de expulsión directo del SDK moderno
+                        await self.highrise.moderate_room(u.id, "kick")
+                        await self.highrise.chat(f"👢 @{u.username} fue expulsado de la sala.")
+                        break
+            except Exception as e:
+                print(f"Error en comando kick: {e}")
+
         # --- COMANDO NUEVO: HACER BAILAR AL USUARIO QUE CORRE EL COMANDO ---
         elif msg.startswith("!me "):
             emote_solicitado = message.replace("!me ", "").strip()
@@ -178,35 +218,3 @@ class Bot(BaseBot):
                 # Obtenemos la lista de todas las personas en la sala
                 room_users = await self.highrise.get_room_users()
                 for u, pos in room_users.content:
-                    if u.id != "68654c84f77cce8a0c95eb1b": # No auto-teletransportar al bot
-                        # Los mueve al lugar donde el bot está parado actualmente
-                        await self.highrise.teleport(u.id, Position(self.bot_pos_x, self.bot_pos_y, self.bot_pos_z))
-            except Exception as e:
-                print(f"Error en teletransporte masivo: {e}")
-
-    # Registra la posición del bot continuamente para saber a dónde traer a todos
-    async def on_user_move(self, user, pos) -> None:
-        if user.id == "68654c84f77cce8a0c95eb1b": # Si es el bot el que se mueve
-            if isinstance(pos, Position):
-                self.bot_pos_x = pos.x
-                self.bot_pos_y = pos.y
-                self.bot_pos_z = pos.z
-
-    async def on_user_join(self, user, position) -> None:
-        # Sumamos 1 al contador de visitas general de la sala
-        self.contador_visitas += 1
-        try:
-            await self.highrise.send_whisper(user.id, f"¡Hola {user.username}! Bienvenido a la sala. Pasala genial. ❤️")
-        except:
-            pass
-
-
-# ==========================================
-# 4. ENTRADA Y CONEXIÓN AL JUEGO (CONFIG)
-# ==========================================
-if __name__ == "__main__":
-    from highrise.__main__ import main, BotDefinition
-    from config.config import room, token
-    
-    definitions = [BotDefinition(Bot(), room, token)]
-    asyncio.run(main(definitions))
