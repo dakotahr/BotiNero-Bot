@@ -13,7 +13,7 @@ app = Flask(__name__)
 
 @app.route('/')
 def home():
-    return "¡Bot Avanzado está activo!", 200
+    return "¡BotiNera Avanzada está activa!", 200
 
 def run_flask():
     app.run(host='0.0.0.0', port=10000)
@@ -206,7 +206,7 @@ class Bot(BaseBot):
                 contador_anuncio = 0 # Si los apagás, el reloj se congela en cero
 
     async def on_start(self, session_metadata, room_permissions=None) -> None:
-        print("¡BotiNero ingresó a la sala con éxito!")
+        print("¡BotiNera ingresó a la sala con éxito!")
         await asyncio.sleep(2)
         await self.highrise.send_emote("dance-tiktok8")
         # Iniciamos el bucle inteligente en segundo plano
