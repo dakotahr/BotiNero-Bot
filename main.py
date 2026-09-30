@@ -13,7 +13,7 @@ app = Flask(__name__)
 
 @app.route('/')
 def home():
-    return "¡BotiNero Avanzada está activa!", 200
+    return "¡Bot Avanzado está activo!", 200
 
 def run_flask():
     app.run(host='0.0.0.0', port=10000)
@@ -42,6 +42,85 @@ TRIVIAS = [
 
 
 # ==========================================
+# LISTA DE EMOTES PARA !DANCE
+# Puedes editar esta lista en el futuro.
+# El número corresponde a la posición del emote.
+# ==========================================
+
+DANCE_EMOTES = [
+    "emote-kiss",
+    "emote-no",
+    "emote-sad",
+    "emote-yes",
+    "emote-laughing",
+    "emote-hello",
+    "emote-wave",
+    "emote-shy",
+    "emote-tired",
+    "emoji-angry",
+    "idle-loop-sitfloor",
+    "emoji-thumbsup",
+    "emote-lust",
+    "emoji-cursing",
+    "emote-greedy",
+    "emoji-flex",
+    "emoji-gagging",
+    "emoji-celebrate",
+    "dance-macarena",
+    "dance-tiktok8",
+    "dance-blackpink",
+    "emote-model",
+    "dance-tiktok2",
+    "dance-pennywise",
+    "emote-bow",
+    "dance-russian",
+    "emote-curtsy",
+    "emote-snowball",
+    "emote-hot",
+    "emote-snowangel",
+    "emote-charging",
+    "dance-shoppingcart",
+    "emote-confused",
+    "idle-enthusiastic",
+    "emote-telekinesis",
+    "emote-float",
+    "emote-teleporting",
+    "emote-swordfight",
+    "emote-maniac",
+    "emote-energyball",
+    "emote-snake",
+    "idle-singing",
+    "emote-frog",
+    "emote-superpose",
+    "emote-cute",
+    "dance-tiktok9",
+    "dance-weird",
+    "dance-tiktok10",
+    "emote-pose7",
+    "emote-pose8",
+    "idle-dance-casual",
+    "emote-pose1",
+    "emote-pose3",
+    "emote-pose5",
+    "emote-cutey",
+    "dance-zombie",
+    "dance-duckwalk",
+    "dance-smoothwalk",
+    "dance-touch",
+    "dance-hipshake",
+    "dance-blackpink",
+    "dance-cheerleader",
+    "dance-anime",
+    "dance-weird",
+    "emote-gravity",
+    "sit-relaxed",
+    "emote-heartfingers",
+    "emote-tapdance",
+    "emote-adoringfans",
+]
+
+
+# ==========================================
 # 3. PROGRAMACIÓN AVANZADA DEL BOT
 # ==========================================
 class Bot(BaseBot):
@@ -55,8 +134,49 @@ class Bot(BaseBot):
         self.bot_pos_x = 0
         self.bot_pos_y = 0
         self.bot_pos_z = 0
+        self.anuncios_activos = True
+
+        # Tareas de emotes en bucle
+        self.me_emote_tasks = {}
+        self.bot_emote_task = None
+        self.dance_emote_tasks = {}
 
     # Tarea repetitiva para anuncios y seguimiento automático
+    # Bucle de emote para usuarios con !me
+    async def bucle_me_emote(self, user_id, emote):
+        try:
+            while True:
+                await self.highrise.send_emote(emote, user_id)
+                await asyncio.sleep(12)
+        except asyncio.CancelledError:
+            pass
+        except Exception as e:
+            print(f"Error en bucle !me: {e}")
+
+    # Bucle de emote para el bot con !emote
+    async def bucle_bot_emote(self, emote):
+        try:
+            while True:
+                await self.highrise.send_emote(emote)
+                await asyncio.sleep(12)
+        except asyncio.CancelledError:
+            pass
+        except Exception as e:
+            print(f"Error en bucle !emote: {e}")
+
+    async def bucle_dance(self, user_id, emote):
+        try:
+            while True:
+                await self.highrise.send_emote(emote, user_id)
+                await asyncio.sleep(12)
+        except asyncio.CancelledError:
+            pass
+        except Exception as e:
+            print(f"Error en bucle !dance: {e}")
+        finally:
+            if self.dance_emote_tasks.get(user_id) is asyncio.current_task():
+                del self.dance_emote_tasks[user_id]
+
     async def bucle_segundo_plano(self):
         contador_anuncio = 0
         while True:
@@ -75,15 +195,18 @@ class Bot(BaseBot):
                 except Exception as e:
                     print(f"Error al seguir: {e}")
 
-            # 2. Sistema de anuncios automáticos (Cada 5 minutos = 300 segundos)
-            contador_anuncio += 5
-            if contador_anuncio >= 300:
-                contador_anuncio = 0
-                frase = random.choice(FRASES_ANUNCIOS)
-                await self.highrise.chat(frase)
+            # 2. Sistema de anuncios automáticos (Modificado con el interruptor)
+            if self.anuncios_activos:
+                contador_anuncio += 5
+                if contador_anuncio >= 300: # Cada 5 minutos
+                    contador_anuncio = 0
+                    frase = random.choice(FRASES_ANUNCIOS)
+                    await self.highrise.chat(frase)
+            else:
+                contador_anuncio = 0 # Si los apagás, el reloj se congela en cero
 
     async def on_start(self, session_metadata, room_permissions=None) -> None:
-        print("¡BotiNera ingresó a la sala con éxito!")
+        print("¡BotiNero ingresó a la sala con éxito!")
         await asyncio.sleep(2)
         await self.highrise.send_emote("dance-tiktok8")
         # Iniciamos el bucle inteligente en segundo plano
@@ -113,17 +236,243 @@ class Bot(BaseBot):
         elif msg == "!visitas":
             await self.highrise.chat(f"📊 Esta sala ha recibido {self.contador_visitas} visitas desde que estoy online.")
 
+         # --- CONTROL DE ANUNCIOS (Solo Dueño) ---
+        elif msg == "!anuncios off" and user.username.lower() == "iamdakota":
+            self.anuncios_activos = False
+            await self.highrise.chat("🔇 Anuncios automáticos desactivados.")
+            
+        elif msg == "!anuncios on" and user.username.lower() == "iamdakota":
+            self.anuncios_activos = True
+            await self.highrise.chat("🔊 Anuncios automáticos activados.")
+
+        # --- SISTEMA DE CLONACIÓN DE ROPA EN MEMORIA ---
+        elif msg == "!cloname 1":
+            if hasattr(self, 'outfit_fabrica') and self.outfit_fabrica:
+                await self.highrise.chat("👕 Volviendo al outfit 1 (Ropa de fábrica)...")
+                try:
+                    await self.highrise.set_outfit(self.outfit_fabrica)
+                except Exception as e:
+                    print(f"Error outfit 1: {e}")
+            else:
+                await self.highrise.send_whisper(user.id, "Aún no tengo guardado mi outfit de fábrica. Usa !cloname solo primero.")
+
+        elif msg == "!cloname 2":
+            if hasattr(self, 'outfit_clonado') and self.outfit_clonado:
+                await self.highrise.chat("✨ Cambiando al outfit 2 (Clonado)...")
+                try:
+                    await self.highrise.set_outfit(self.outfit_clonado)
+                except Exception as e:
+                    print(f"Error outfit 2: {e}")
+            else:
+                await self.highrise.send_whisper(user.id, "No hay ningún outfit clonado guardado. Usa !cloname solo primero.")
+
+        elif msg == "!cloname":
+            await self.highrise.chat("🤖 Analizando tu outfit para clonarlo...")
+            try:
+                if not hasattr(self, 'outfit_fabrica') or self.outfit_fabrica is None:
+                    resultado_bot = await self.highrise.get_my_outfit()
+                    self.outfit_fabrica = resultado_bot.outfit
+                    print("✅ Outfit de fábrica guardado.")
+
+                resultado_usuario = await self.highrise.get_user_outfit(user.id)
+                tu_ropa = resultado_usuario.outfit
+                self.outfit_clonado = tu_ropa
+
+                await self.highrise.set_outfit(tu_ropa)
+                await self.highrise.chat("✨ ¡Clonación exitosa! Guardado como Outfit 2. Usa '!cloname 1' para volver a fábrica.")
+            except Exception as e:
+                print(f"Error clonar: {e}")
+                await self.highrise.send_whisper(user.id, "❌ No pude clonar tu ropa. ¡Usa prendas básicas de fábrica!")
+
+        # --- COMANDO !DANCE ---
+        #
+        # !dance 2
+        #       -> ejecuta el emote numero 2 una vez
+        #
+        # !dance 2 loop
+        #       -> repite el emote numero 2 sobre el usuario
+        #
+        # !dance parar
+        #       -> detiene el loop de ese usuario
+
+        elif msg.startswith("!dance"):
+
+            partes = message.strip().split()
+
+            if len(partes) == 2 and partes[1].lower() == "parar":
+                tarea = self.dance_emote_tasks.get(user.id)
+
+                if tarea:
+                    tarea.cancel()
+                    await self.highrise.chat(
+                        f"🛑 Dejé de repetir el dance para @{user.username}."
+                    )
+                else:
+                    await self.highrise.send_whisper(
+                        user.id,
+                        "ℹ️ No tienes ningún dance en bucle."
+                    )
+                return
+
+            if len(partes) < 2:
+                await self.highrise.send_whisper(
+                    user.id,
+                    f"Uso: !dance NUMERO o !dance NUMERO loop. "
+                    f"Hay {len(DANCE_EMOTES)} emotes disponibles."
+                )
+                return
+
+            try:
+                numero = int(partes[1])
+            except ValueError:
+                await self.highrise.send_whisper(
+                    user.id,
+                    f"❌ Debes usar un número del 1 al {len(DANCE_EMOTES)}."
+                )
+                return
+
+            if numero < 1 or numero > len(DANCE_EMOTES):
+                await self.highrise.send_whisper(
+                    user.id,
+                    f"❌ El número debe estar entre 1 y {len(DANCE_EMOTES)}."
+                )
+                return
+
+            emote_solicitado = DANCE_EMOTES[numero - 1]
+
+            if len(partes) >= 3 and partes[2].lower() == "loop":
+                tarea_anterior = self.dance_emote_tasks.get(user.id)
+
+                if tarea_anterior:
+                    tarea_anterior.cancel()
+
+                tarea = asyncio.create_task(
+                    self.bucle_dance(user.id, emote_solicitado)
+                )
+
+                self.dance_emote_tasks[user.id] = tarea
+
+                await self.highrise.chat(
+                    f"🔁 @{user.username} está haciendo "
+                    f"{emote_solicitado} (#{numero}) en bucle."
+                )
+                return
+
+            try:
+                await self.highrise.send_emote(
+                    emote_solicitado,
+                    user.id
+                )
+            except Exception as e:
+                print(f"Error en comando !dance: {e}")
+
         # --- DETECTAR CUALQUIER EMOTE INTELIGENTE ---
+        #
+        # !emote dance-tiktok8
+        #       -> ejecuta una vez
+        #
+        # !emote dance-tiktok8 loop
+        #       -> repite el emote
+        #
+        # !emote parar
+        #       -> detiene el loop del bot
+
         elif msg.startswith("!emote "):
-            emote_solicitado = message.replace("!emote ", "").strip()
+            partes = message.strip().split()
+
+            if len(partes) == 2 and partes[1].lower() == "parar":
+                if self.bot_emote_task:
+                    self.bot_emote_task.cancel()
+                    self.bot_emote_task = None
+                    await self.highrise.chat("🛑 Dejé de repetir el emote.")
+                return
+
+            if len(partes) >= 3 and partes[2].lower() == "loop":
+                emote_solicitado = partes[1]
+
+                if self.bot_emote_task:
+                    self.bot_emote_task.cancel()
+
+                self.bot_emote_task = asyncio.create_task(
+                    self.bucle_bot_emote(emote_solicitado)
+                )
+
+                await self.highrise.chat(
+                    f"🔁 Repitiendo {emote_solicitado}."
+                )
+                return
+
+            if len(partes) < 2:
+                await self.highrise.send_whisper(
+                    user.id,
+                    "Uso: !emote ID o !emote ID loop"
+                )
+                return
+
+            emote_solicitado = partes[1]
+
             try:
                 await self.highrise.send_emote(emote_solicitado)
-            except:
-                await self.highrise.send_whisper(user.id, "No se pudo ejecutar ese emote. Asegúrate de escribir bien el ID técnico.")
+            except Exception:
+                await self.highrise.send_whisper(
+                    user.id,
+                    "No se pudo ejecutar ese emote. Asegúrate de escribir bien el ID técnico."
+                )
 
         # --- COMANDO NUEVO: HACER BAILAR AL USUARIO QUE CORRE EL COMANDO ---
+        #
+        # !me dance-tiktok8
+        #       -> ejecuta una vez
+        #
+        # !me dance-tiktok8 loop
+        #       -> repite el emote
+        #
+        # !me parar
+        #       -> detiene el loop de ese usuario
+
         elif msg.startswith("!me "):
-            emote_solicitado = message.replace("!me ", "").strip()
+            partes = message.strip().split()
+
+            if len(partes) == 2 and partes[1].lower() == "parar":
+                tarea = self.me_emote_tasks.get(user.id)
+
+                if tarea:
+                    tarea.cancel()
+                    await self.highrise.chat(
+                        f"🛑 Dejé de repetir el emote para @{user.username}."
+                    )
+                else:
+                    await self.highrise.chat(
+                        f"ℹ️ @{user.username} no tiene un emote en bucle."
+                    )
+                return
+
+            if len(partes) >= 3 and partes[2].lower() == "loop":
+                emote_solicitado = partes[1]
+
+                tarea_anterior = self.me_emote_tasks.get(user.id)
+                if tarea_anterior:
+                    tarea_anterior.cancel()
+
+                tarea = asyncio.create_task(
+                    self.bucle_me_emote(user.id, emote_solicitado)
+                )
+                self.me_emote_tasks[user.id] = tarea
+
+                await self.highrise.chat(
+                    f"🔁 @{user.username} ahora tiene {emote_solicitado} en bucle."
+                )
+                return
+
+            if len(partes) < 2:
+                await self.highrise.send_whisper(
+                    user.id,
+                    "Uso: !me ID o !me ID loop"
+                )
+                return
+
+            emote_solicitado = partes[1]
+
             try:
                 await self.highrise.send_emote(emote_solicitado, user.id)
             except Exception as e:
